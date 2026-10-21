@@ -44,6 +44,8 @@ if [ -f ".fed/bin/python" ]; then
     PYTHON_CMD=".fed/bin/python"
 elif [ -f ".venv/bin/python" ]; then
     PYTHON_CMD=".venv/bin/python"
+elif [ -f ".venv/Scripts/python.exe" ]; then
+    PYTHON_CMD=".venv/Scripts/python.exe"
 fi
 
 $PYTHON_CMD fl_simulation.py \
