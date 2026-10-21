@@ -115,7 +115,7 @@ def get_model(model_name, input_dim, output_dim):
     else:
         raise ValueError(f"Unknown model: {model_name}")
 
-def run_simulation(strategy_name, model_name, client_loaders, test_loader, input_dim, output_dim, args):
+def run_simulation(strategy_name, model_name, client_loaders, test_loader, input_dim, output_dim, args, progress_callback=None, stop_event=None):
     print(f"--- Starting Simulation: Strategy={strategy_name}, Model={model_name} ---")
     
     global_model = get_model(model_name, input_dim, output_dim)
@@ -131,6 +131,10 @@ def run_simulation(strategy_name, model_name, client_loaders, test_loader, input
     start_time_sim = time.time()
     
     for round_idx in range(args.num_rounds):
+        if stop_event and stop_event.is_set():
+            print("Simulation cancelled by user.")
+            break
+
         round_start = time.time()
         
         global_weights = global_model.state_dict()
@@ -167,11 +171,87 @@ def run_simulation(strategy_name, model_name, client_loaders, test_loader, input
         display_metric = f"Acc: {round_metrics.get('accuracy', 0):.2f}%" if args.task_type == 'classification' else f"RMSE: {round_metrics.get('rmse', 0):.4f}"
         print(f"[{model_name}][{strategy_name}] Round {round_idx+1}/{args.num_rounds} | {display_metric} | Loss: {round_metrics['loss']:.4f}")
 
+        if progress_callback:
+            progress_callback({
+                'strategy': strategy_name,
+                'model': model_name,
+                'round': round_idx + 1,
+                'total_rounds': args.num_rounds,
+                'metrics': {k: float(v) for k, v in round_metrics.items()}
+            })
+
     total_time = time.time() - start_time_sim
     metrics_history['total_sim_time'] = total_time
     print(f"Finished {strategy_name} with {model_name} in {total_time:.2f}s")
     
     return metrics_history
+
+def execute_experiment(args, progress_callback=None, stop_event=None):
+    client_data, (X_test, y_test), num_classes, _ = load_and_preprocess_data(
+        args.data_path, args.target_col, args.task_type, args.num_clients, args.distribution
+    )
+    
+    if client_data is None:
+        print("Dataset load failed.")
+        return None, "Dataset load failed."
+
+    client_loaders = []
+    y_dtype = torch.long if args.task_type == 'classification' else torch.float32
+    
+    for X, y in client_data:
+        dataset = torch.utils.data.TensorDataset(torch.tensor(X, dtype=torch.float32), torch.tensor(y, dtype=y_dtype))
+        client_loaders.append(torch.utils.data.DataLoader(dataset, batch_size=args.batch_size, shuffle=True))
+    
+    test_dataset = torch.utils.data.TensorDataset(torch.tensor(X_test, dtype=torch.float32), torch.tensor(y_test, dtype=y_dtype))
+    test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=args.batch_size)
+    
+    input_dim = client_data[0][0].shape[1]
+    output_dim = num_classes if args.task_type == 'classification' else 1
+    
+    strategies = getattr(args, 'strategies', ['FedAvg', 'FedProx', 'FedAdam'])
+    models = getattr(args, 'models', ['LogisticRegression', 'SimpleMLP', 'DeepMLP'])
+    
+    results = {
+        'metadata': {
+            'username': args.username,
+            'data_path': args.data_path,
+            'target_col': args.target_col,
+            'task_type': args.task_type,
+            'distribution': args.distribution,
+            'num_clients': args.num_clients,
+            'num_rounds': args.num_rounds
+        },
+        'experiments': {}
+    }
+    
+    print("\n=== Phase 1: Model Comparison (using FedAvg) ===")
+    for model_name in models:
+        if stop_event and stop_event.is_set():
+            break
+        key = f"{model_name}_FedAvg"
+        results['experiments'][key] = run_simulation('FedAvg', model_name, client_loaders, test_loader, input_dim, output_dim, args, progress_callback, stop_event)
+
+    print("\n=== Phase 2: Strategy Comparison (using DeepMLP) ===")
+    target_model = 'DeepMLP' if 'DeepMLP' in models else models[-1]
+    for strategy in strategies:
+        if stop_event and stop_event.is_set():
+            break
+        if strategy == 'FedAvg' and f"{target_model}_FedAvg" in results['experiments']:
+            continue
+        key = f"{target_model}_{strategy}"
+        results['experiments'][key] = run_simulation(strategy, target_model, client_loaders, test_loader, input_dim, output_dim, args, progress_callback, stop_event)
+        
+    import datetime
+    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    # Output uniquely tagged by the runner's username
+    filename = f'simulation_results_{args.username}_{timestamp}.json'
+    filepath = os.path.join(RESULTS_DIR, filename)
+    
+    with open(filepath, 'w') as f:
+        json.dump(results, f, indent=4)
+    
+    print(f"Results saved to {filepath}")
+    return filepath, None
 
 def main():
     parser = argparse.ArgumentParser(description="HealthCare Federated Learning Simulation")
@@ -188,66 +268,11 @@ def main():
     parser.add_argument('--proximal_mu', type=float, default=0.01, help="Proximal term for FedProx")
     
     args = parser.parse_args()
-
-    client_data, (X_test, y_test), num_classes, _ = load_and_preprocess_data(
-        args.data_path, args.target_col, args.task_type, args.num_clients, args.distribution
-    )
-    
-    if client_data is None:
-        print("Dataset load failed.")
-        return
-
-    client_loaders = []
-    
-    y_dtype = torch.long if args.task_type == 'classification' else torch.float32
-    
-    for X, y in client_data:
-        dataset = torch.utils.data.TensorDataset(torch.tensor(X, dtype=torch.float32), torch.tensor(y, dtype=y_dtype))
-        client_loaders.append(torch.utils.data.DataLoader(dataset, batch_size=args.batch_size, shuffle=True))
-    
-    test_dataset = torch.utils.data.TensorDataset(torch.tensor(X_test, dtype=torch.float32), torch.tensor(y_test, dtype=y_dtype))
-    test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=args.batch_size)
-    
-    input_dim = client_data[0][0].shape[1]
-    output_dim = num_classes if args.task_type == 'classification' else 1
-    
-    strategies = ['FedAvg', 'FedProx', 'FedAdam']
-    models = ['LogisticRegression', 'SimpleMLP', 'DeepMLP']
-    results = {
-        'metadata': {
-            'username': args.username,
-            'data_path': args.data_path,
-            'target_col': args.target_col,
-            'task_type': args.task_type,
-            'distribution': args.distribution,
-            'num_clients': args.num_clients,
-            'num_rounds': args.num_rounds
-        },
-        'experiments': {}
-    }
-    
-    print("\n=== Phase 1: Model Comparison (using FedAvg) ===")
-    for model_name in models:
-        key = f"{model_name}_FedAvg"
-        results['experiments'][key] = run_simulation('FedAvg', model_name, client_loaders, test_loader, input_dim, output_dim, args)
-
-    print("\n=== Phase 2: Strategy Comparison (using DeepMLP) ===")
-    target_model = 'DeepMLP'
-    for strategy in strategies:
-        if strategy == 'FedAvg': continue 
-        key = f"{target_model}_{strategy}"
-        results['experiments'][key] = run_simulation(strategy, target_model, client_loaders, test_loader, input_dim, output_dim, args)
-        
-    import datetime
-    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    # Output uniquely tagged by the runner's username
-    filename = f'simulation_results_{args.username}_{timestamp}.json'
-    filepath = os.path.join(RESULTS_DIR, filename)
-    
-    with open(filepath, 'w') as f:
-        json.dump(results, f, indent=4)
-    
-    print(f"Results saved to {filepath}")
+    filepath, err = execute_experiment(args)
+    if err:
+        print(f"Error: {err}")
+    else:
+        print(f"Simulation completed successfully: {filepath}")
 
 if __name__ == "__main__":
     main()

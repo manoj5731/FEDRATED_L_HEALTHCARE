@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HealthCare Federated Learning Studio</title>
+    <meta name="description" content="Privacy-Preserving Healthcare Federated Learning Simulation Studio with FedAvg, FedProx, and FedAdam">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <link rel="stylesheet" href="app.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Top Navigation Bar -->
+        <header class="app-header">
+            <div class="header-left">
+                <div class="logo-wrapper">
+                    <div class="logo-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                        </svg>
+                        <span class="pulse-ring"></span>
+                    </div>
+                    <div class="logo-text">
+                        <span class="logo-title">FedHealth <span class="badge-tag">STUDIO</span></span>
+                        <span class="logo-subtitle">Privacy-Preserving Federated Intelligence</span>
+                    </div>
+                </div>
+            </div>
+
+            <nav class="nav-tabs" id="mainNav">
+                <button class="nav-tab active" data-tab="overview">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                    Overview
+                </button>
+                <button class="nav-tab" data-tab="studio">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                    Run Simulation
+                </button>
+                <button class="nav-tab" data-tab="monitor">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                    Live Monitor
+                    <span class="live-indicator" id="navLiveIndicator" style="display: none;"></span>
+                </button>
+                <button class="nav-tab" data-tab="analytics">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                    Reports & Analytics
+                </button>
+                <button class="nav-tab" data-tab="dataset">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                    Dataset Explorer
+                </button>
+            </nav>
+
+            <div class="header-right">
+                <div class="status-pill" id="globalStatusPill">
+                    <span class="status-dot"></span>
+                    <span id="globalStatusText">Idle</span>
+                </div>
+                <button class="btn btn-outline btn-sm" id="btnRefreshData" title="Refresh data">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Content View Container -->
+        <main class="app-main">
+            <!-- TAB 1: OVERVIEW -->
+            <section class="tab-pane active" id="pane-overview">
+                <div class="pane-header">
+                    <div>
+                        <h1>Healthcare Federated Learning Dashboard</h1>
+                        <p class="subtitle">Distributed collaborative training on private patient clinical records without centralizing data</p>
+                    </div>
+                    <button class="btn btn-primary" onclick="switchTab('studio')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                        Launch New Experiment
+                    </button>
+                </div>
+
+                <!-- Metrics Overview Cards -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon cyan">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-label">HOSPITAL CLIENTS</span>
+                            <span class="stat-value" id="statClients">5 Distributed</span>
+                            <span class="stat-sub">Zero raw data exchange</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon emerald">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-label">TOP BENCHMARK ACCURACY</span>
+                            <span class="stat-value" id="statTopAcc">93.64%</span>
+                            <span class="stat-sub">DeepMLP with FedAvg / FedProx</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon violet">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-label">SUPPORTED STRATEGIES</span>
+                            <span class="stat-value">FedAvg, Prox, Adam</span>
+                            <span class="stat-sub">Adaptive & Heterogeneous</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon amber">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-label">DATASET SAMPLES</span>
+                            <span class="stat-value" id="statSamples">60,000 Records</span>
+                            <span class="stat-sub">5 Clinical Target Diseases</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Architecture & How It Works -->
+                <div class="grid-2-col">
+                    <div class="card glass-card">
+                        <div class="card-header">
+                            <h3>Federated Learning Architecture</h3>
+                            <span class="chip chip-cyan">Privacy-Preserving</span>
+                        </div>
+                        <div class="fl-diagram">
+                            <div class="fl-server-node">
+                                <div class="server-badge">CENTRAL FEDERATED AGGREGATOR</div>
+                                <div class="server-desc">FedAvg / FedProx / FedAdam Parameter Server</div>
+                            </div>
+                            <div class="fl-network-lines">
+                                <div class="flow-line"><span class="flow-dot"></span></div>
+                                <div class="flow-line"><span class="flow-dot"></span></div>
+                                <div class="flow-line"><span class="flow-dot"></span></div>
+                            </div>
+                            <div class="fl-clients-row">
+                                <div class="client-box">
+                                    <span class="client-name">Hospital A</span>
+                                    <span class="client-records">Cardiology</span>
+                                </div>
+                                <div class="client-box">
+                                    <span class="client-name">Hospital B</span>
+                                    <span class="client-records">Pulmonology</span>
+                                </div>
+                                <div class="client-box">
+                                    <span class="client-name">Hospital C</span>
+                                    <span class="client-records">Endocrinology</span>
+                                </div>
+                                <div class="client-box">
+                                    <span class="client-name">Hospital D</span>
+                                    <span class="client-records">ICU / Vitals</span>
+                                </div>
+                                <div class="client-box">
+                                    <span class="client-name">Hospital E</span>
+                                    <span class="client-records">General Care</span>
+                                </div>
+                            </div>
+                        </div>
+                        <p class="fl-explanation">
+                            Each hospital trains locally on private vitals and diagnosis records (Blood Pressure, SpO2, Heart Rate, Temperature). Only mathematical weight updates are transmitted to the aggregator, guaranteeing HIPAA/GDPR compliance.
+                        </p>
+                    </div>
+
+                    <div class="card glass-card">
+                        <div class="card-header">
+                            <h3>Recent Simulation Runs</h3>
+                            <button class="btn btn-sm btn-outline" onclick="switchTab('analytics')">View All</button>
+                        </div>
+                        <div class="table-wrapper">
+                            <table class="data-table" id="recentSimulationsTable">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>User</th>
+                                        <th>Rounds</th>
+                                        <th>FedAvg Acc</th>
+                                        <th>FedProx Acc</th>
+                                        <th>FedAdam Acc</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td colspan="6" class="text-center">Loading simulations...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 2: RUN SIMULATION (STUDIO) -->
+            <section class="tab-pane" id="pane-studio">
+                <div class="pane-header">
+                    <div>
+                        <h1>Simulation Studio</h1>
+                        <p class="subtitle">Configure hyper-parameters, models, aggregation algorithms, and client distributions</p>
+                    </div>
+                </div>
+
+                <div class="grid-form-layout">
+                    <!-- Form Config -->
+                    <div class="card glass-card">
+                        <div class="card-header">
+                            <h3>Experiment Configuration</h3>
+                            <span class="chip chip-emerald">Ready</span>
+                        </div>
+                        <form id="simConfigForm" class="form-grid">
+                            <div class="form-group">
+                                <label for="cfgUsername">Researcher / User Name</label>
+                                <input type="text" id="cfgUsername" class="form-input" value="Manoj" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="cfgDataset">Dataset (.csv in data/)</label>
+                                <select id="cfgDataset" class="form-input">
+                                    <option value="Synthetic_patient-HealthCare-Monitoring_dataset.csv">Synthetic_patient-HealthCare-Monitoring_dataset.csv</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="cfgTarget">Target Column</label>
+                                <input type="text" id="cfgTarget" class="form-input" value="Predicted Disease" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="cfgTask">Clinical Task Type</label>
+                                <select id="cfgTask" class="form-input">
+                                    <option value="classification" selected>Classification (e.g., Disease diagnosis)</option>
+                                    <option value="regression">Regression (e.g., Continuous metric)</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="cfgDistribution">Data Distribution Across Clients</label>
+                                <select id="cfgDistribution" class="form-input">
+                                    <option value="iid" selected>IID (Uniform random hospital partition)</option>
+                                    <option value="non_iid">Non-IID (Class-skewed hospital specialization)</option>
+                                </select>
+                            </div>
+
+                            <div class="form-row-2">
+                                <div class="form-group">
+                                    <label for="cfgClients">Number of Clients (Hospitals)</label>
+                                    <input type="number" id="cfgClients" class="form-input" min="2" max="20" value="5">
+                                </div>
+                                <div class="form-group">
+                                    <label for="cfgRounds">Communication Rounds</label>
+                                    <input type="number" id="cfgRounds" class="form-input" min="1" max="50" value="5">
+                                </div>
+                            </div>
+
+                            <div class="form-row-2">
+                                <div class="form-group">
+                                    <label for="cfgBatchSize">Client Batch Size</label>
+                                    <input type="number" id="cfgBatchSize" class="form-input" value="32">
+                                </div>
+                                <div class="form-group">
+                                    <label for="cfgLr">Learning Rate (&eta;)</label>
+                                    <input type="number" id="cfgLr" class="form-input" step="0.001" value="0.01">
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Model Architectures to Evaluate</label>
+                                <div class="checkbox-group">
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" name="cfgModels" value="LogisticRegression" checked> Logistic Regression (Linear Baseline)
+                                    </label>
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" name="cfgModels" value="SimpleMLP" checked> SimpleMLP (2 Hidden Layers)
+                                    </label>
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" name="cfgModels" value="DeepMLP" checked> DeepMLP (Dense + BatchNorm + Dropout)
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Aggregation Strategies</label>
+                                <div class="checkbox-group">
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" name="cfgStrategies" value="FedAvg" checked> FedAvg (Federated Averaging)
+                                    </label>
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" name="cfgStrategies" value="FedProx" checked> FedProx (Heterogeneity-robust proximal regularizer)
+                                    </label>
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" name="cfgStrategies" value="FedAdam" checked> FedAdam (Adaptive server-side momentum)
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary btn-lg" id="btnStartSimulation">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                                    Start Federated Training
+                                </button>
+                                <button type="button" class="btn btn-danger btn-lg" id="btnStopSimulation" style="display: none;">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="6" width="12" height="12"/></svg>
+                                    Stop Simulation
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Right Column: Info & Explanations -->
+                    <div class="sidebar-info-stack">
+                        <div class="card glass-card">
+                            <div class="card-header">
+                                <h4>Strategy Breakdown</h4>
+                            </div>
+                            <div class="strategy-expl-list">
+                                <div class="strategy-item">
+                                    <div class="strategy-item-header">
+                                        <span class="badge badge-cyan">FedAvg</span>
+                                        <strong>Federated Averaging</strong>
+                                    </div>
+                                    <p>Standard benchmark. Coordinates clients and computes parameter-wise weighted averages after local SGD epochs.</p>
+                                </div>
+                                <div class="strategy-item">
+                                    <div class="strategy-item-header">
+                                        <span class="badge badge-emerald">FedProx</span>
+                                        <strong>Proximal Term Regularization</strong>
+                                    </div>
+                                    <p>Adds &mu;/2 ||w - w<sup>t</sup>||<sup>2</sup> loss penalty. Stabilizes convergence in heterogeneous and non-IID distributions.</p>
+                                </div>
+                                <div class="strategy-item">
+                                    <div class="strategy-item-header">
+                                        <span class="badge badge-violet">FedAdam</span>
+                                        <strong>Server-Side Adaptive Optimization</strong>
+                                    </div>
+                                    <p>Maintains first and second momentum moments on client pseudo-gradients for faster initial acceleration.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card glass-card">
+                            <div class="card-header">
+                                <h4>Pre-flight Checklist</h4>
+                            </div>
+                            <ul class="checklist">
+                                <li>&#x2714; Automatic one-hot encoding for categorical variables</li>
+                                <li>&#x2714; Automatic StandardScaler for numerical vital signs</li>
+                                <li>&#x2714; 80/20 train/test split with stratification</li>
+                                <li>&#x2714; Automated report and convergence graph rendering</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 3: LIVE MONITOR -->
+            <section class="tab-pane" id="pane-monitor">
+                <div class="pane-header">
+                    <div>
+                        <h1>Live Federation Monitor</h1>
+                        <p class="subtitle" id="monitorSub">Real-time telemetry and communication rounds tracking</p>
+                    </div>
+                    <div class="header-actions">
+                        <span class="chip" id="monitorPill">Status: Idle</span>
+                        <button class="btn btn-danger btn-sm" id="btnStopMonitor" style="display: none;">Stop</button>
+                    </div>
+                </div>
+
+                <!-- Live Progress Bar -->
+                <div class="progress-bar-container">
+                    <div class="progress-labels">
+                        <span id="progressPhaseText">Simulation Progress</span>
+                        <span id="progressPercent">0%</span>
+                    </div>
+                    <div class="progress-track">
+                        <div class="progress-fill" id="progressFill" style="width: 0%;"></div>
+                    </div>
+                </div>
+
+                <!-- Active Step Stats -->
+                <div class="live-metrics-row">
+                    <div class="live-metric-card">
+                        <span class="label">ACTIVE MODEL</span>
+                        <span class="value" id="liveModel">--</span>
+                    </div>
+                    <div class="live-metric-card">
+                        <span class="label">ACTIVE STRATEGY</span>
+                        <span class="value" id="liveStrategy">--</span>
+                    </div>
+                    <div class="live-metric-card">
+                        <span class="label">ROUND</span>
+                        <span class="value" id="liveRound">--</span>
+                    </div>
+                    <div class="live-metric-card">
+                        <span class="label">LATEST ACCURACY</span>
+                        <span class="value text-emerald" id="liveAcc">--</span>
+                    </div>
+                    <div class="live-metric-card">
+                        <span class="label">LATEST LOSS</span>
+                        <span class="value text-cyan" id="liveLoss">--</span>
+                    </div>
+                    <div class="live-metric-card">
+                        <span class="label">ELAPSED TIME</span>
+                        <span class="value" id="liveElapsed">00:00</span>
+                    </div>
+                </div>
+
+                <!-- Live Convergence Charts -->
+                <div class="grid-2-col">
+                    <div class="card glass-card">
+                        <div class="card-header">
+                            <h3>Live Accuracy (%) Convergence</h3>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="liveAccuracyChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="card glass-card">
+                        <div class="card-header">
+                            <h3>Live Loss Convergence</h3>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="liveLossChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Live Logs Console -->
+                <div class="card glass-card terminal-card">
+                    <div class="card-header">
+                        <div class="terminal-dots">
+                            <span></span><span></span><span></span>
+                        </div>
+                        <span class="terminal-title">Federated Learning Node Terminal</span>
+                        <button class="btn btn-outline btn-xs" id="btnClearLogs">Clear</button>
+                    </div>
+                    <div class="terminal-body" id="terminalLogs">
+                        <div class="terminal-line text-muted">[System] Ready for simulation run.</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 4: REPORTS & ANALYTICS -->
+            <section class="tab-pane" id="pane-analytics">
+                <div class="pane-header">
+                    <div>
+                        <h1>Simulation Reports & Analytics</h1>
+                        <p class="subtitle">Comprehensive algorithmic benchmarks, convergence curves, and clinical performance</p>
+                    </div>
+                    <div class="header-actions">
+                        <select id="selectReportHistory" class="form-input">
+                            <option value="">Select a previous simulation report...</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="analytics-content" id="analyticsViewer">
+                    <!-- Image visualizers -->
+                    <div class="grid-2-col">
+                        <div class="card glass-card">
+                            <div class="card-header">
+                                <h3>Model Comparison (Strategy: FedAvg)</h3>
+                            </div>
+                            <div class="report-img-wrapper" id="modelPlotWrapper">
+                                <img id="reportModelPlot" src="" alt="Model Comparison Plot">
+                            </div>
+                        </div>
+
+                        <div class="card glass-card">
+                            <div class="card-header">
+                                <h3>Strategy Convergence & Loss (DeepMLP)</h3>
+                            </div>
+                            <div class="report-img-wrapper" id="stratPlotWrapper">
+                                <img id="reportStratPlot" src="" alt="Strategy Comparison Plot">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Markdown Report Text -->
+                    <div class="card glass-card markdown-card">
+                        <div class="card-header">
+                            <h3 id="reportTitle">Analytical Summary & Clinical Evaluation</h3>
+                            <button class="btn btn-outline btn-sm" id="btnDownloadReport">Download Report (.md)</button>
+                        </div>
+                        <div class="markdown-body" id="reportMarkdownBody">
+                            <p class="text-muted">Select a simulation report above to review complete metrics.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 5: DATASET EXPLORER -->
+            <section class="tab-pane" id="pane-dataset">
+                <div class="pane-header">
+                    <div>
+                        <h1>Healthcare Dataset Explorer</h1>
+                        <p class="subtitle">Inspect tabular clinical features, vital distributions, and target disease distributions</p>
+                    </div>
+                </div>
+
+                <div class="card glass-card mb-20" id="datasetMetaCard">
+                    <div class="card-header">
+                        <h3 id="datasetTitle">Dataset Details</h3>
+                        <span class="chip chip-cyan" id="datasetRowsChip">Loading...</span>
+                    </div>
+                    <div class="dataset-stats-strip" id="datasetStatsStrip"></div>
+                </div>
+
+                <!-- Target Distribution Card -->
+                <div class="grid-2-col">
+                    <div class="card glass-card">
+                        <div class="card-header">
+                            <h3>Target Disease Distribution</h3>
+                        </div>
+                        <div class="chart-container" style="height: 280px;">
+                            <canvas id="diseaseDistributionChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="card glass-card">
+                        <div class="card-header">
+                            <h3>Feature Columns & Types</h3>
+                        </div>
+                        <div class="feature-tags" id="featureTags"></div>
+                    </div>
+                </div>
+
+                <!-- Sample Data Table Preview -->
+                <div class="card glass-card mt-20">
+                    <div class="card-header">
+                        <h3>Dataset Sample Preview</h3>
+                        <span class="text-muted">First 3 patient vitals</span>
+                    </div>
+                    <div class="table-wrapper">
+                        <table class="data-table" id="datasetPreviewTable">
+                            <thead></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

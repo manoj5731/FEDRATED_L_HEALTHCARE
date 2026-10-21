@@ -142,6 +142,12 @@ def generate_report(result_file=None):
         f.write(f"![Model Comparison]({os.path.abspath(model_plot_file)})\n\n")
         
     print(f"Report securely generated at: {report_file}")
+    return {
+        'report_file': report_file,
+        'model_plot': model_plot_file,
+        'strategy_plot': strategy_plot_file,
+        'content_name': content_name
+    }
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate FL Report")
